@@ -15,12 +15,14 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-enum direction { UP, DOWN }
+enum direction { UP, DOWN, LEFT, RIGHT }
 
 class _HomePageState extends State<HomePage> {
   // ball variables
   double ballX = 0;
   double ballY = 0;
+  double ballXincrements = 0.01;
+  double ballYincrements = 0.01;
 
   // game state variables
   bool hasGameStarted = false;
@@ -35,8 +37,10 @@ class _HomePageState extends State<HomePage> {
   double brickY = -0.9;
   double brickWidth = 0.4;
   double brickHeight = 0.05;
+  bool isBrickBroken = false;
 
-  var ballDirection = direction.DOWN;
+  var ballYDirection = direction.DOWN;
+  var ballXDirection = direction.LEFT;
 
   // start game
   void startGame() {
@@ -53,7 +57,33 @@ class _HomePageState extends State<HomePage> {
         timer.cancel();
         isGameOver = true;
       }
+
+      // check for broken bricks
+      checkForBrokenBricks();
     });
+  }
+
+  void resetGame() {
+    // _initializeBricks();
+    setState(() {
+      playerX = -0.2;
+      ballX = 0;
+      ballY = 0;
+      isGameOver = false;
+      hasGameStarted = false;
+    });
+  }
+
+  void checkForBrokenBricks() {
+    if (ballX >= brickX &&
+        ballX <= brickX + brickWidth &&
+        ballY <= brickY + brickHeight &&
+        isBrickBroken == false) {
+      setState(() {
+        isBrickBroken = true;
+        ballYDirection = direction.DOWN;
+      });
+    }
   }
 
   bool isPlayerDead() {
@@ -85,20 +115,39 @@ class _HomePageState extends State<HomePage> {
 
   void moveBall() {
     setState(() {
-      if (ballDirection == direction.DOWN) {
-        ballY += 0.01;
-      } else if (ballDirection == direction.UP) {
-        ballY -= 0.01;
+      // move horizontally
+      if (ballXDirection == direction.LEFT) {
+        ballX -= ballXincrements;
+      } else if (ballXDirection == direction.RIGHT) {
+        ballX += ballXincrements;
+      }
+
+      // move vertically
+      if (ballYDirection == direction.DOWN) {
+        ballY += ballYincrements;
+      } else if (ballYDirection == direction.UP) {
+        ballY -= ballYincrements;
       }
     });
   }
 
   void updateDirection() {
     setState(() {
+      // player
       if (ballY >= 0.9 && ballX >= playerX && ballX <= playerX + playerWidth) {
-        ballDirection = direction.UP;
-      } else if (ballY <= -0.9) {
-        ballDirection = direction.DOWN;
+        ballYDirection = direction.UP;
+      }
+      // top
+      else if (ballY <= -1) {
+        ballYDirection = direction.DOWN;
+      }
+      // right wall
+      else if (ballX >= 1) {
+        ballXDirection = direction.LEFT;
+      }
+      // left wall
+      else if (ballX <= -1) {
+        ballXDirection = direction.RIGHT;
       }
     });
   }
@@ -126,7 +175,10 @@ class _HomePageState extends State<HomePage> {
                 Coverscreen(hasGameStarted: hasGameStarted),
 
                 // game over screen
-                GameOverScreen(isGameOver: isGameOver),
+                GameOverScreen(
+                  isGameOver: isGameOver,
+                  function: resetGame,
+                ),
 
                 // ball
                 MyBall(
@@ -146,6 +198,7 @@ class _HomePageState extends State<HomePage> {
                   brickY: brickY,
                   brickHeight: brickHeight,
                   brickWidth: brickWidth,
+                  isBrickBroken: isBrickBroken,
                 ),
               ],
             ),
