@@ -20,7 +20,8 @@ class MyBrick extends StatelessWidget {
     return isBrickBroken
         ? Container()
         : Container(
-            alignment: Alignment(brickX, brickY),
+            alignment:
+                Alignment((2 * brickX + brickWidth) / (2 - brickWidth), brickY),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(3),
               child: Container(
