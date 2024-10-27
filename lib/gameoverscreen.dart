@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class GameOverScreen extends StatelessWidget {
   final bool isGameOver;
   final function;
-
-  static var gameFont = GoogleFonts.pressStart2p(
-      textStyle: TextStyle(
-          color: Colors.deepPurple[600], letterSpacing: 0, fontSize: 28));
 
   const GameOverScreen({super.key, required this.isGameOver, this.function});
 
@@ -20,11 +15,14 @@ class GameOverScreen extends StatelessWidget {
                 alignment: const Alignment(0, -0.3),
                 child: const Text(
                   'GAME OVER',
-                  style: gameFont,
+                  style: TextStyle(
+                      color: Color.fromARGB(255, 255, 255, 255),
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
               Container(
-                alignment: const Alignment(0, 0.2),
+                alignment: const Alignment(0, 0.0),
                 child: GestureDetector(
                     onTap: function,
                     child: ClipRRect(
