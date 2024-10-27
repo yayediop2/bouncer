@@ -1,4 +1,4 @@
-// ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names, camel_case_types, deprecated_member_use
 import 'dart:async';
 import 'dart:io' show Platform;
 
@@ -25,8 +25,8 @@ class _HomePageState extends State<HomePage> {
   // ball variables
   double ballX = 0;
   double ballY = 0;
-  double ballXincrements = 0.015;
-  double ballYincrements = 0.01;
+   double ballXincrements = 0.005;
+  double ballYincrements = 0.003;
 
   // game state variables
   bool hasGameStarted = false;
@@ -39,8 +39,8 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
 
   // Simplified accelerometer control variables
-  final double _sensitivity = 1.2; // Increased from 0.6
-  final double _smoothing = 0.7; // Decreased from 0.85 for faster response
+   final double _sensitivity = 2.0; 
+  final double _smoothing = 0.65; 
   double _lastX = 0;
   double _currentVelocity = 0;
 
@@ -52,42 +52,39 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _setupAccelerometer() {
+   void _setupAccelerometer() {
     try {
       _accelerometerSubscription =
           accelerometerEvents.listen((AccelerometerEvent event) {
         if (!isPaused && hasGameStarted) {
           setState(() {
-            // Smooth the input
             _lastX = _lastX * _smoothing + event.x * (1 - _smoothing);
 
-            // Update velocity with smoothed input
             _currentVelocity =
-                _currentVelocity * 0.8 - (_lastX * _sensitivity);
+                _currentVelocity * 0.75 - (_lastX * _sensitivity); 
 
-            // Limit maximum speed
-            _currentVelocity = _currentVelocity.clamp(-0.06, 0.06); // Doubled from ±0.03
-
+            _currentVelocity = _currentVelocity.clamp(-0.06, 0.06); 
             // Update position with velocity
             double newPosition = playerX + _currentVelocity;
 
-            // Handle boundaries
+            // Handle boundaries with slight bounce effect
             if (newPosition < -1) {
               newPosition = -1;
-              _currentVelocity *= -0.5; // Add slight bounce
+              _currentVelocity *= -0.5;
             } else if (newPosition + playerWidth > 1) {
               newPosition = 1 - playerWidth;
-              _currentVelocity *= -0.5; // Add slight bounce
+              _currentVelocity *= -0.5;
             }
 
             playerX = newPosition;
           });
         } else {
           _currentVelocity = 0;
-          _lastX = 0; // Reset smooth input when paused
+          _lastX = 0;
         }
       });
     } catch (e) {
+      // ignore: avoid_print
       print('Error setting up accelerometer: $e');
     }
   }
