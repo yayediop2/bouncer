@@ -1,5 +1,6 @@
 // ignore_for_file: constant_identifier_names
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import 'package:my_app_bouncer/coverscreen.dart';
 import 'package:my_app_bouncer/gameoverscreen.dart';
 import 'package:my_app_bouncer/player.dart';
 import 'package:my_app_bouncer/utils.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,6 +36,66 @@ class _HomePageState extends State<HomePage> {
   // player variables
   double playerX = -0.2;
   double playerWidth = 0.4;
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+
+  // Simplified accelerometer control variables
+  final double _sensitivity = 0.6;
+  final double _smoothing = 0.85;
+  double _lastX = 0;
+  double _currentVelocity = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Platform.isAndroid || Platform.isIOS) {
+      _setupAccelerometer();
+    }
+  }
+
+  void _setupAccelerometer() {
+    try {
+      _accelerometerSubscription =
+          accelerometerEvents.listen((AccelerometerEvent event) {
+        if (!isPaused && hasGameStarted) {
+          setState(() {
+            // Smooth the input
+            _lastX = _lastX * _smoothing + event.x * (1 - _smoothing);
+
+            // Update velocity with smoothed input
+            _currentVelocity =
+                _currentVelocity * 0.95 - (_lastX * _sensitivity);
+
+            // Limit maximum speed
+            _currentVelocity = _currentVelocity.clamp(-0.03, 0.03);
+
+            // Update position with velocity
+            double newPosition = playerX + _currentVelocity;
+
+            // Handle boundaries
+            if (newPosition < -1) {
+              newPosition = -1;
+              _currentVelocity = 0;
+            } else if (newPosition + playerWidth > 1) {
+              newPosition = 1 - playerWidth;
+              _currentVelocity = 0;
+            }
+
+            playerX = newPosition;
+          });
+        } else {
+          _currentVelocity = 0;
+        }
+      });
+    } catch (e) {
+      print('Error setting up accelerometer: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _accelerometerSubscription?.cancel();
+    super.dispose();
+  }
 
   // brick variables
   static double firstBrickX = -1 + wallGap;
@@ -280,13 +342,18 @@ class _HomePageState extends State<HomePage> {
       focusNode: FocusNode(),
       autofocus: true,
       onKey: (event) {
-        if (event.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
-          moveLeft();
-        } else if (event.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
-          moveRight();
-        } else if (event.isKeyPressed(LogicalKeyboardKey.escape)) {
+        // Keep keyboard controls for non-mobile platforms
+        if (!Platform.isAndroid && !Platform.isIOS) {
+          if (event.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
+            moveLeft();
+          } else if (event.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
+            moveRight();
+          }
+        }
+        // Keep escape key for all platforms
+        if (event.isKeyPressed(LogicalKeyboardKey.escape)) {
           setState(() {
-            isPaused = !isPaused; // Toggle pause state
+            isPaused = !isPaused;
           });
         }
       },
