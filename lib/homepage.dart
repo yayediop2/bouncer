@@ -39,8 +39,8 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
 
   // Simplified accelerometer control variables
-  final double _sensitivity = 0.6;
-  final double _smoothing = 0.85;
+  final double _sensitivity = 1.2; // Increased from 0.6
+  final double _smoothing = 0.7; // Decreased from 0.85 for faster response
   double _lastX = 0;
   double _currentVelocity = 0;
 
@@ -63,10 +63,10 @@ class _HomePageState extends State<HomePage> {
 
             // Update velocity with smoothed input
             _currentVelocity =
-                _currentVelocity * 0.95 - (_lastX * _sensitivity);
+                _currentVelocity * 0.8 - (_lastX * _sensitivity);
 
             // Limit maximum speed
-            _currentVelocity = _currentVelocity.clamp(-0.03, 0.03);
+            _currentVelocity = _currentVelocity.clamp(-0.06, 0.06); // Doubled from ±0.03
 
             // Update position with velocity
             double newPosition = playerX + _currentVelocity;
@@ -74,16 +74,17 @@ class _HomePageState extends State<HomePage> {
             // Handle boundaries
             if (newPosition < -1) {
               newPosition = -1;
-              _currentVelocity = 0;
+              _currentVelocity *= -0.5; // Add slight bounce
             } else if (newPosition + playerWidth > 1) {
               newPosition = 1 - playerWidth;
-              _currentVelocity = 0;
+              _currentVelocity *= -0.5; // Add slight bounce
             }
 
             playerX = newPosition;
           });
         } else {
           _currentVelocity = 0;
+          _lastX = 0; // Reset smooth input when paused
         }
       });
     } catch (e) {
