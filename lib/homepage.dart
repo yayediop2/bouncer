@@ -39,12 +39,6 @@ class _HomePageState extends State<HomePage> {
   double playerWidth = 0.4;
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
 
-  // Simplified accelerometer control variables
-  final double _sensitivity = 2.0;
-  final double _smoothing = 0.85;
-  double _lastX = 0;
-  double _currentVelocity = 0;
-
   @override
   void initState() {
     super.initState();
@@ -54,45 +48,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _setupAccelerometer() {
-    try {
-      _accelerometerSubscription =
-          accelerometerEvents.listen((AccelerometerEvent event) {
-        if (!isPaused && hasGameStarted) {
-          setState(() {
-            // Smooth the input
-            _lastX = _lastX * _smoothing + event.x * (1 - _smoothing);
+    double sensitivity = 0.015; // Reduced sensitivity for smoother control
+    _accelerometerSubscription =
+        accelerometerEvents.listen((AccelerometerEvent event) {
+      if (!isPaused && hasGameStarted) {
+        setState(() {
+          // Calculate new position based on accelerometer input
+          // Negative because tilting right (positive X) should move paddle right
+          double movement = -event.x * sensitivity;
+          double newPosition = playerX + movement;
 
-            // Update velocity with smoothed input
-            _currentVelocity =
-                _currentVelocity * 0.95 - (_lastX * _sensitivity);
-
-            // Limit maximum speed
-            _currentVelocity = _currentVelocity.clamp(-0.03, 0.03);
-
-            // Update position with velocity
-            double newPosition = playerX + _currentVelocity;
-
-            // Handle boundaries
-            if (newPosition < -1) {
-              newPosition = -1;
-              _currentVelocity = 0;
-            } else if (newPosition + playerWidth > 1) {
-              newPosition = 1 - playerWidth;
-              _currentVelocity = 0;
-            }
-
+          // Clamp position within screen boundaries (-1 to 1)
+          if (newPosition < -1) {
+            playerX = -1;
+          } else if (newPosition + playerWidth > 1) {
+            playerX = 1 - playerWidth;
+          } else {
             playerX = newPosition;
-          });
-        } else {
-          _currentVelocity = 0;
-        }
-      });
-    } catch (e) {
-      //print('Error setting up accelerometer: $e');
-    }
+          }
+        });
+      }
+    });
   }
 
- @override
+  @override
   void dispose() {
     _gameTimer?.cancel();
     _accelerometerSubscription?.cancel();
