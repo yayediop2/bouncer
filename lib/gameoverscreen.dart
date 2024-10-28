@@ -21,8 +21,8 @@ class GameOverScreen extends StatelessWidget {
                 alignment: const Alignment(0, -0.3),
                 child: Text(
                   hasPlayerWon
-                      ? 'YOU WIN!'
-                      : 'GAME OVER', 
+                      ? 'YOU WON!'
+                      : 'YOU LOST!', 
                   style: const TextStyle(
                     color: Color.fromARGB(255, 255, 255, 255),
                     fontSize: 40,
