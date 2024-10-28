@@ -1,4 +1,4 @@
-// ignore_for_file: constant_identifier_names, camel_case_types, deprecated_member_use
+// ignore_for_file: constant_identifier_names, camel_case_types, deprecated_member_use, avoid_print
 import 'dart:async';
 import 'dart:io' show Platform;
 
@@ -25,10 +25,11 @@ class _HomePageState extends State<HomePage> {
   // ball variables
   double ballX = 0;
   double ballY = 0;
-   double ballXincrements = 0.005;
-  double ballYincrements = 0.003;
+  double ballXincrements = 0.005;
+  double ballYincrements = 0.002;
 
   // game state variables
+  Timer? _gameTimer;
   bool hasGameStarted = false;
   bool isGameOver = false;
   bool isPaused = false;
@@ -39,8 +40,8 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
 
   // Simplified accelerometer control variables
-   final double _sensitivity = 2.0; 
-  final double _smoothing = 0.65; 
+  final double _sensitivity = 2.0;
+  final double _smoothing = 0.85;
   double _lastX = 0;
   double _currentVelocity = 0;
 
@@ -52,45 +53,48 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-   void _setupAccelerometer() {
+  void _setupAccelerometer() {
     try {
       _accelerometerSubscription =
           accelerometerEvents.listen((AccelerometerEvent event) {
         if (!isPaused && hasGameStarted) {
           setState(() {
+            // Smooth the input
             _lastX = _lastX * _smoothing + event.x * (1 - _smoothing);
 
+            // Update velocity with smoothed input
             _currentVelocity =
-                _currentVelocity * 0.75 - (_lastX * _sensitivity); 
+                _currentVelocity * 0.95 - (_lastX * _sensitivity);
 
-            _currentVelocity = _currentVelocity.clamp(-0.06, 0.06); 
+            // Limit maximum speed
+            _currentVelocity = _currentVelocity.clamp(-0.03, 0.03);
+
             // Update position with velocity
             double newPosition = playerX + _currentVelocity;
 
-            // Handle boundaries with slight bounce effect
+            // Handle boundaries
             if (newPosition < -1) {
               newPosition = -1;
-              _currentVelocity *= -0.5;
+              _currentVelocity = 0;
             } else if (newPosition + playerWidth > 1) {
               newPosition = 1 - playerWidth;
-              _currentVelocity *= -0.5;
+              _currentVelocity = 0;
             }
 
             playerX = newPosition;
           });
         } else {
           _currentVelocity = 0;
-          _lastX = 0;
         }
       });
     } catch (e) {
-      // ignore: avoid_print
-      print('Error setting up accelerometer: $e');
+      //print('Error setting up accelerometer: $e');
     }
   }
 
-  @override
+ @override
   void dispose() {
+    _gameTimer?.cancel();
     _accelerometerSubscription?.cancel();
     super.dispose();
   }
@@ -149,8 +153,15 @@ class _HomePageState extends State<HomePage> {
 
   // start game
   void startGame() {
-    hasGameStarted = true;
-    Timer.periodic(const Duration(milliseconds: 10), (timer) {
+    if (hasGameStarted || _gameTimer != null) {
+      return; // Don't start if game is already running
+    }
+
+    setState(() {
+      hasGameStarted = true;
+    });
+
+    _gameTimer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
       if (isPaused) {
         return;
       }
@@ -163,12 +174,14 @@ class _HomePageState extends State<HomePage> {
       // check if gameOver
       if (isPlayerDead()) {
         timer.cancel();
+        _gameTimer = null;
         isGameOver = true;
       }
 
       // check if all bricks are broken
       if (areAllBricksBroken()) {
         timer.cancel();
+        _gameTimer = null;
         isGameOver = true;
       }
 
@@ -178,6 +191,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void resetGame() {
+    _gameTimer?.cancel();
+    _gameTimer = null;
+
     setState(() {
       myBricks = [
         // [x, y, broken = true/false]
