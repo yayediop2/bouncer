@@ -299,11 +299,17 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void updateDirection() {
+   void updateDirection() {
     setState(() {
-      // player
-      if (ballY >= 0.9 && ballX >= playerX && ballX <= playerX + playerWidth) {
+      if (ballY >= 0.9 && ballY <= 0.95 && // Narrower vertical collision window
+          ballX >= playerX && 
+          ballX <= playerX + playerWidth) {
         ballYDirection = direction.UP;
+      }
+      // Game over condition - ball passes paddle
+      else if (ballY > 0.95) {
+        // Let the ball continue falling until it triggers game over
+        ballYDirection = direction.DOWN;
       }
       // top
       else if (ballY <= -1) {
